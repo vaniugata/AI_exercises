@@ -6,14 +6,12 @@
 
 constexpr int SCREEN_WIDTH = 800;
 constexpr int SCREEN_HEIGHT = 800;
-constexpr double SCALE = 0.3f;
-constexpr double LEARNING_RATE = 0.1f;
-constexpr unsigned POINTS_CNT = 100;
+static double SCALE = .1f;
+constexpr double LEARNING_RATE = .1f;
+constexpr unsigned POINTS_CNT = 320;
 
 SDL_Renderer* renderer = nullptr;
 SDL_Window* window = nullptr;
-
-enum Pane { pane_1, pane_2 };
 
 void DrawLine( std::vector<double> weights );
 
@@ -36,35 +34,27 @@ int main(){
 
 	SDL_Event* e = new SDL_Event;
 	bool q = false;	
-	Pane pane = pane_1;
 
 	// Init training samples 
-	std::vector<TraningSample> ts;
-	ts.push_back(TraningSample(0, 0, false));
-	ts.push_back(TraningSample(0, 1, false));
-	ts.push_back(TraningSample(1, 0, false));
-	ts.push_back(TraningSample(1, 1, !false));
+	std::vector<TraningSample> ts0;
+	ts0.push_back(TraningSample(0, 0, false));
+	ts0.push_back(TraningSample(0, 1, false));
+	ts0.push_back(TraningSample(1, 0, false));
+	ts0.push_back(TraningSample(1, 1, !false));
 
-	std::vector<std::pair<SDL_Point, bool> > training_set;
-
+	std::vector<TraningSample> ts1;
 	for(unsigned i = 0; i < POINTS_CNT; i++){
-		SDL_Point pt;
-		pt.x = rand() % SCREEN_WIDTH;
-		pt.y = rand() % SCREEN_HEIGHT;
-		bool is_above_the_line = pt.x > pt.y;
-		training_set.push_back( std::pair<SDL_Point, bool>( pt, is_above_the_line ) );		
+		float x = (rand() % 100) / 100.0f;
+		float y = (rand() % 100) / 100.0f ;
+		ts1.push_back( TraningSample(x, y,( x > y ) ) );
 	}
 
+	std::vector<TraningSample>* ptrTs = &ts0;
 
 	Perceptron* p = new Perceptron;
 
 	unsigned time = SDL_GetTicks();
 	unsigned period = 50;
-
-	std::vector<int> input;
-	p->InitWeights(3);
-	input.clear();
-	unsigned i = 0;
 
 	while(!q) {
 		while(SDL_PollEvent(e)) {
@@ -72,69 +62,41 @@ int main(){
 			
 			switch(e->key.keysym.sym){
 				case SDLK_q : q = true; break;
-				case SDLK_1 : pane = pane_1; break;
-				case SDLK_2 : pane = pane_2; break;
+				case SDLK_1 : 
+					ptrTs = &ts0;
+					p->Reset();		  
+				break;
+				case SDLK_2 : 
+					ptrTs = &ts1;
+					p->Reset();
+					break;
+				case SDLK_a : SCALE += 0.05; break;
+				case SDLK_d : SCALE -= 0.05; break; 
 			}
 		}
-
-		switch( pane ){
-			case pane_1 :
-				if( time + period < SDL_GetTicks()){
-					p->Train(ts, 1, LEARNING_RATE);
-					time = SDL_GetTicks();
-				}
-				DrawLine( p->GetWeights() );
-
-				for(unsigned i = 0; i < ts.size(); ++i){
-						int x = (int)ScaleCoordiate(ts[i].samples[1], 0 , 1, 0, SCREEN_WIDTH);
-						int y = (int)ScaleCoordiate(ts[i].samples[2], 0 , 1, 0, SCREEN_HEIGHT);
-						SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-						DrawCircle( x, y, 10 );
-					}
-			break;
-			case pane_2 :
-				if( time + period < SDL_GetTicks() ){
-					if( i >= training_set.size()-1 ) i = 0;
-					time = SDL_GetTicks();
-					input.push_back(1);
-					input.push_back( training_set[i].first.x );
-					input.push_back( training_set[i].first.y );
-					p->Train( input, training_set[i].second, LEARNING_RATE );
-					input.clear();
-					i++;
-				}
-				double x1_val = (-1);
-				double x2_val = 1;
-				double y1_val = CalcCoordinate( p->GetWeights(), x1_val );
-				double y2_val = CalcCoordinate( p->GetWeights(), x2_val );
-
-				int x1 = (int) ScaleCoordiate(x1_val, 0, 1, 0, SCREEN_WIDTH) + SCREEN_WIDTH/2;
-				int x2 = (int) ScaleCoordiate(x2_val, 0, 1, 0, SCREEN_WIDTH) + SCREEN_WIDTH/2;
-				int y1 = (int) ScaleCoordiate(y1_val, 0, 1, 0, SCREEN_WIDTH) + SCREEN_HEIGHT/2;
-				int y2 = (int) ScaleCoordiate(y2_val, 0, 1, 0, SCREEN_WIDTH) + SCREEN_HEIGHT/2;
-
-				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-				Bresenham_line(x1, y1, x2, y2);
-		
-				unsigned time2 = SDL_GetTicks();
-				if( time2 + period < SDL_GetTicks() ) {
-					std::cerr<<"x1:"<<x1<<" y1:"<<y1<<" x2:"<<x2<<" y2:"<<y2<<"\n";
-					time = SDL_GetTicks();
-				}
-				// Draw samples
-				for(auto i : training_set){
-					if( i.second ){
-						SDL_SetRenderDrawColor(renderer, 100, 255, 100, 255);
-					} else {
-						SDL_SetRenderDrawColor(renderer, 255, 100, 100, 255);
-					}
-					DrawCircle(i.first.x, i.first.y, 5);
-				}
-			
-				SDL_SetRenderDrawColor(renderer, 255, 255, 100, 255);
-				Bresenham_line(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, true);
-			break;
+		if( time + period < SDL_GetTicks()){
+				p->Train(*ptrTs, 1, LEARNING_RATE);
+				time = SDL_GetTicks();
 		}
+		
+		int offset_x = ( SCREEN_WIDTH - SCREEN_WIDTH*SCALE ) / 2;
+		int offset_y = ( SCREEN_HEIGHT- SCREEN_HEIGHT*SCALE ) / 2;
+		int r = 10;
+		for(unsigned i = 0; i < ptrTs->size(); ++i){
+				int x = SCALE * (int)ScaleCoordiate(ptrTs->at(i).samples[1], 0 , 1, 0, SCREEN_WIDTH) + offset_x;
+				int y = SCALE * (int)ScaleCoordiate(ptrTs->at(i).samples[2], 0 , 1, 0, SCREEN_HEIGHT) + offset_y;
+				if( ptrTs->at(i).correct_output ){
+					SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+				} else {
+					SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+				}
+				DrawCircle( x, (SCREEN_HEIGHT-y), r*SCALE );
+		}
+		DrawLine( p->GetWeights() );
+		SDL_SetRenderDrawColor(renderer,255,255,255,255);
+		Bresenham_line( offset_x, 0, offset_x, SCREEN_HEIGHT );
+		Bresenham_line( 0,SCREEN_HEIGHT - offset_y, SCREEN_WIDTH, SCREEN_HEIGHT-offset_y );
+
 		UpdateScreen();
 	}
 	delete p;
@@ -143,26 +105,32 @@ int main(){
 }
 
 void DrawLine(std::vector<double> weights){
-	//double raw_x1 = -SCREEN_WIDTH * SCALE, raw_x2 = SCREEN_WIDTH - SCREEN_WIDTH * SCALE;
-	double raw_x1 = 0, raw_x2 = 1;
+
+	double offset_x = ( SCREEN_WIDTH - SCREEN_WIDTH*SCALE ) / 2;
+	double offset_y = ( SCREEN_HEIGHT - SCREEN_HEIGHT*SCALE ) / 2;
 	
-	double raw_y1 = SCALE * CalcCoordinate( weights, raw_x1 );
-	double raw_y2 = SCALE * CalcCoordinate( weights, raw_x2 );
+	double raw_x1 = -offset_x / SCREEN_WIDTH;
+	double raw_x2 = 1 + offset_x / SCREEN_WIDTH;
+	raw_x1 = -offset_x; raw_x2 = SCREEN_WIDTH;
 
-	int y1 = (int) ( SCREEN_HEIGHT - ScaleCoordiate(raw_y1, 0, 1, 200, SCREEN_HEIGHT) );
-	int y2 = (int) ( SCREEN_HEIGHT - ScaleCoordiate(raw_y2, 0, 1, 200, SCREEN_HEIGHT) );
+	double raw_y1 =  CalcCoordinate( weights, raw_x1 );
+	double raw_y2 =  CalcCoordinate( weights, raw_x2 );
 
-	int x1 = (int) ScaleCoordiate(raw_x1, 0, 1, 200, SCREEN_WIDTH);
-	int x2 = (int) ScaleCoordiate(raw_x2, 0, 1, 200, SCREEN_WIDTH);
+	int y1 = (int) ( ScaleCoordiate(raw_y1, 0, 1, 0, SCREEN_HEIGHT*SCALE) ) + offset_y;
+	int y2 = (int) ( ScaleCoordiate(raw_y2, 0, 1, 0, SCREEN_HEIGHT*SCALE) ) + offset_y;
+
+	int x1 = (int) ScaleCoordiate(raw_x1, 0, 1, 0, SCREEN_WIDTH*SCALE) + offset_x;
+	int x2 = (int) ScaleCoordiate(raw_x2, 0, 1, 0, SCREEN_WIDTH*SCALE) + offset_x;
 	
 	SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); 
-	Bresenham_line(x1, y1, x2 ,y2);
+	//Bresenham_line(x1, SCREEN_HEIGHT-y1, x2 ,SCREEN_HEIGHT-y2);
+	SDL_RenderDrawLine(renderer, x1, SCREEN_HEIGHT-y1, x2, SCREEN_HEIGHT-y2);
 	std::cerr << x1 << " " << y1 << " " << x2 << " " << y2 << "\n";
 }
 
 double CalcCoordinate(std::vector<double> weights, double x){
 	if(weights.empty()) return (-1);
-	return (-weights[1] * x - weights[0]) / weights[2]; 
+	return ( (-weights[1]*x - weights[0]) / weights[2] );
 }
 
 double ScaleCoordiate(double value, double min_in, double max_in, double min_out, double max_out){

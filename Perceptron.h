@@ -5,11 +5,11 @@
 #include <SDL2/SDL.h>
 
 struct TraningSample {
-	std::vector<bool> samples;
+	std::vector<float> samples;
 	bool correct_output;
 
-	TraningSample( bool a, bool b, bool output ) {
-		samples = std::vector<bool>(3);
+	TraningSample( float a, float b, bool output ) {
+		samples = std::vector<float>(3);
 		samples = {1, a , b};
 
 		correct_output = output;
@@ -25,17 +25,15 @@ public:
 	Perceptron();
 	virtual ~Perceptron();
 
-	void InitWeights( unsigned input_size );
-
 private:	
-	void SumInputs( std::vector<bool>& inputs );
+	void SumInputs( std::vector<float>& inputs );
 
 public:
-	void Input( std::vector<bool>& inputs );
+	void Input( std::vector<float>& inputs );
 	bool Output();
 	void Train( std::vector<TraningSample>& samples, unsigned cycle_cnt, double lr );
-	void Train( std::vector<int>& input, bool target_output, double lr );
-	
+	void Reset();
+
 	const std::vector<double>& GetWeights() const; 
 
 	void SetWeights(std::vector<double> weights);
