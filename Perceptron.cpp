@@ -34,7 +34,7 @@ bool Perceptron::Output() {
 
 void Perceptron::Train(std::vector<TraningSample>& samples, unsigned cycle_cnt, double lr) {
 	if( _training_finished ) {
-		std::cerr << "Training finished.\n";
+	//	std::cerr << "Training finished.\n";
 		return;	
 	}
 	bool has_error = false;

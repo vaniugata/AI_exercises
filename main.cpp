@@ -6,7 +6,7 @@
 #include "Geometry.h"
 
 constexpr double LEARNING_RATE = .1f;
-constexpr unsigned POINTS_CNT = 320;
+constexpr unsigned POINTS_CNT = 20;
 
 int main(){
 	std::srand( std::time(0) );
@@ -51,8 +51,8 @@ int main(){
 					ptrTs = &ts1;
 					p->Reset();
 					break;
-				case SDLK_a : geom->scale(0.05); break;
-				case SDLK_d : geom->scale(-0.05); break; 
+				case SDLK_a : geom->scale(0.01); break;
+				case SDLK_d : geom->scale(-0.01); break; 
 			}
 		}
 		if( time + period < SDL_GetTicks()){
@@ -61,7 +61,7 @@ int main(){
 		}
 		geom->DrawLine( p->GetWeights() );
 		
-		geom->DrawSamples( *ptrTs, p );
+		geom->DrawSamples( *ptrTs, e );
 		geom->UpdateScreen();
 	}
 	delete p;
