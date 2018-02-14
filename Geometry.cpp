@@ -34,7 +34,7 @@ double Geometry::CalcCoordinate(std::vector<double> weights, double x) {
 }
 
 double Geometry::ScaleCoordiate( double value, double src_begin, double src_end, double dest_begin, double dest_end ) {
-	//return ((value/std::abs(min_out-min_in) - min_in)*std::abs(max_out-max_in) + max_in);
+	
 	return (value - src_begin) / std::abs( src_end - src_begin ) * std::abs( dest_end - dest_begin ) + dest_begin ;  
 }
 
@@ -94,7 +94,6 @@ void Geometry::DrawLine( std::vector<double> weights ) {
 	
 	SDL_SetRenderDrawColor(_renderer, 255, 255, 0, 255); 
 	SDL_RenderDrawLine(_renderer, x1, SCREEN_HEIGHT-y1, x2, SCREEN_HEIGHT-y2);
-	std::cerr <<x1<<" "<<SCREEN_HEIGHT-y1<<" "<<x2<<" "<<SCREEN_HEIGHT-y2<<"\n"; 
 }
 
 void Geometry::DrawCircle(int x, int y, int r){
@@ -117,9 +116,9 @@ void Geometry::DrawSamples( std::vector<TraningSample>& ts, SDL_Event* e ){
 			int y = _scale * ScaleCoordiate((double)ts[i].samples[2], 0.0f, 1.0f, 0.0f, (double)SCREEN_HEIGHT) + _offset_y;
 			HandleMouse(e, x, SCREEN_HEIGHT-y, r, ts[i]);
 			if( ts[i].correct_output ){
-				SDL_SetRenderDrawColor(_renderer, 255, 0, 0, 255);
-			} else {
 				SDL_SetRenderDrawColor(_renderer, 0, 255, 0, 255);
+			} else {
+				SDL_SetRenderDrawColor(_renderer, 255, 0, 0, 255);
 			}
 			DrawCircle( x, (SCREEN_HEIGHT-y), r*_scale );
 	}

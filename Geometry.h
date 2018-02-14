@@ -1,9 +1,14 @@
+#include "Macros.h"
 #include <vector>
+#ifdef WINDOWS
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 #include "Perceptron.h"
 
 constexpr int SCREEN_WIDTH = 800;
-constexpr int SCREEN_HEIGHT = 800;
+constexpr int SCREEN_HEIGHT = 600;
 
 class Geometry{
 	private:

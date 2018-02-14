@@ -1,4 +1,10 @@
+#include "Macros.h"
+
+#ifdef WINDOWS
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -6,9 +12,9 @@
 #include "Geometry.h"
 
 constexpr double LEARNING_RATE = .1f;
-constexpr unsigned POINTS_CNT = 20;
+constexpr unsigned POINTS_CNT = 200;
 
-int main(){
+int main( int argc, char** argv ){
 	std::srand( std::time(0) );
 	Geometry* geom = new Geometry;
 	geom->InitSDL();
@@ -55,7 +61,7 @@ int main(){
 				case SDLK_d : geom->scale(-0.01); break; 
 			}
 		}
-		if( time + period < SDL_GetTicks()){
+		if( time + period < SDL_GetTicks() ){
 				p->Train(*ptrTs, 1, LEARNING_RATE);
 				time = SDL_GetTicks();
 		}

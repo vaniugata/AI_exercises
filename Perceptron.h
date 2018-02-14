@@ -1,8 +1,12 @@
 #ifndef PERCEPTRON_H
 #define PERCEPTRON_H
-
+#include "Macros.h"
 #include <vector>
+#ifdef WINDOWS
+#include <SDL.h>
+#else
 #include <SDL2/SDL.h>
+#endif
 
 struct TraningSample {
 	std::vector<float> samples;
